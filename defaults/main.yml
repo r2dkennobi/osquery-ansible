@@ -1,0 +1,4 @@
+---
+# defaults file for osquery-ansible
+osquery_version: "3.3.0_1"
+osquery_checksum: "sha256:a9d2f71542ae72ea8f589385dff7aa1f6c64361aa77f2389a22edc64aa8d9a12"

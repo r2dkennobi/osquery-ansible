@@ -1,0 +1,48 @@
+---
+- name: Set some variables
+  set_fact:
+    osquery_installer: "osquery_{{ osquery_version }}.linux.amd64.deb"
+
+- name: Retreive the binary
+  get_url:
+    url: "https://pkg.osquery.io/deb/{{ osquery_installer }}"
+    dest: "/tmp/{{ osquery_installer }}"
+    checksum: "{{ osquery_checksum }}"
+    remote_src: true
+
+- name: Install osquery
+  become: yes
+  apt:
+    deb: "/tmp/{{ osquery_installer }}"
+
+- name: Allow osquery to access the system log (rsyslog)
+  become: yes
+  blockinfile:
+    path: "/etc/rsyslog.conf"
+    block: |
+      template(
+        name="OsqueryCsvFormat"
+        type="string"
+        string="%timestamp:::date-rfc3339,csv%,%hostname:::csv%,%syslogseverity:::csv%,%syslogfacility-text:::csv%,%syslogtag:::csv%,%msg:::csv%\n"
+      )
+      *.* action(type="ompipe" Pipe="/var/osquery/syslog_pipe" template="OsqueryCsvFormat")
+  notify:
+    - Restart rsyslog
+
+- name: Copy osquery configuration to host
+  become: yes
+  copy:
+    src: "{{ role_path }}/files/osquery.conf"
+    dest: "/etc/osquery/osquery.conf"
+  notify:
+    - Restart osqueryd
+
+- name: Copy packs to host
+  become: yes
+  copy:
+    src: "{{ item }}"
+    dest: "/usr/share/osquery/packs/{{ item | basename }}"
+  with_fileglob:
+    - "{{ role_path }}/files/packs/*.conf"
+  notify:
+    - Restart osqueryd

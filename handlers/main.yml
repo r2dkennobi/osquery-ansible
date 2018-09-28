@@ -1,0 +1,15 @@
+---
+# handlers file for osquery-ansible
+- name: Restart rsyslog
+  become: yes
+  service:
+    name: rsyslog
+    enabled: yes
+    state: restarted
+
+- name: Restart osqueryd
+  become: yes
+  service:
+    name: osqueryd
+    enabled: yes
+    state: restarted
